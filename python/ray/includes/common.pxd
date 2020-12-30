@@ -248,6 +248,11 @@ cdef extern from "ray/core_worker/common.h" nogil:
                      unordered_map[c_string, double] &resources,
                      const unordered_map[c_string, c_string]
                      &override_environment_variables)
+        CTaskOptions(c_string name, int num_returns,
+                     unordered_map[c_string, double] &resources,
+                     const unordered_map[c_string, c_string]
+                     &override_environment_variables,
+                     const c_string &debugger_breakpoint)
 
     cdef cppclass CActorCreationOptions "ray::ActorCreationOptions":
         CActorCreationOptions()

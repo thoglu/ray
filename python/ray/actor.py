@@ -820,7 +820,11 @@ class ActorHandle:
 
         object_refs = worker.core_worker.submit_actor_task(
             self._ray_actor_language, self._ray_actor_id, function_descriptor,
-            list_args, name, num_returns, self._ray_actor_method_cpus)
+            list_args, name, num_returns, self._ray_actor_method_cpus,
+            worker.debugger_breakpoint)
+        # Reset worker's debug context from the last "remote" command
+        # (which applies only to this .remote call).
+        worker.debugger_breakpoint = b""
 
         if len(object_refs) == 1:
             object_refs = object_refs[0]

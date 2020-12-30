@@ -1108,12 +1108,12 @@ cdef class CoreWorker:
             CCoreWorkerProcess.GetCoreWorker().SubmitTask(
                 ray_function, args_vector, CTaskOptions(
                     name, num_returns, c_resources,
-                    c_override_environment_variables),
+                    c_override_environment_variables,
+                    debugger_breakpoint),
                 &return_ids, max_retries,
                 c_pair[CPlacementGroupID, int64_t](
                     c_placement_group_id, placement_group_bundle_index),
-                placement_group_capture_child_tasks,
-                debugger_breakpoint)
+                placement_group_capture_child_tasks)
 
             return VectorToObjectRefs(return_ids)
 
@@ -1238,7 +1238,8 @@ cdef class CoreWorker:
                           args,
                           c_string name,
                           int num_returns,
-                          double num_method_cpus):
+                          double num_method_cpus,
+                          const c_string& debugger_breakpoint):
 
         cdef:
             CActorID c_actor_id = actor_id.native()
@@ -1260,7 +1261,11 @@ cdef class CoreWorker:
             CCoreWorkerProcess.GetCoreWorker().SubmitActorTask(
                 c_actor_id,
                 ray_function,
-                args_vector, CTaskOptions(name, num_returns, c_resources),
+                args_vector,
+                CTaskOptions(
+                    name, num_returns, c_resources,
+                    unordered_map[c_string, c_string](),
+                    debugger_breakpoint),
                 &return_ids)
 
             return VectorToObjectRefs(return_ids)

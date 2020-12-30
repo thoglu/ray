@@ -628,15 +628,12 @@ class CoreWorker : public rpc::CoreWorkerServiceHandler {
   /// \param[in] max_retires max number of retry when the task fails.
   /// \param[in] placement_options placement group options.
   /// \param[in] placement_group_capture_child_tasks whether or not the submitted task
-  /// \param[in] debugger_breakpoint breakpoint to drop into for the debugger after this
-  /// task starts executing, or "" if we do not want to drop into the debugger.
   /// should capture parent's placement group implicilty.
   void SubmitTask(const RayFunction &function,
                   const std::vector<std::unique_ptr<TaskArg>> &args,
                   const TaskOptions &task_options, std::vector<ObjectID> *return_ids,
                   int max_retries, BundleID placement_options,
-                  bool placement_group_capture_child_tasks,
-                  const std::string &debugger_breakpoint);
+                  bool placement_group_capture_child_tasks);
 
   /// Create an actor.
   ///

@@ -90,8 +90,7 @@ cdef extern from "ray/core_worker/core_worker.h" nogil:
             const CTaskOptions &options, c_vector[CObjectID] *return_ids,
             int max_retries,
             c_pair[CPlacementGroupID, int64_t] placement_options,
-            c_bool placement_group_capture_child_tasks,
-            c_string debugger_breakpoint)
+            c_bool placement_group_capture_child_tasks)
         CRayStatus CreateActor(
             const CRayFunction &function,
             const c_vector[unique_ptr[CTaskArg]] &args,

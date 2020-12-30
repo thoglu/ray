@@ -56,11 +56,13 @@ struct TaskOptions {
   TaskOptions(std::string name, int num_returns,
               std::unordered_map<std::string, double> &resources,
               const std::unordered_map<std::string, std::string>
-                  &override_environment_variables = {})
+                  &override_environment_variables = {},
+              const std::string &debugger_breakpoint = "")
       : name(name),
         num_returns(num_returns),
         resources(resources),
-        override_environment_variables(override_environment_variables) {}
+        override_environment_variables(override_environment_variables),
+        debugger_breakpoint(debugger_breakpoint) {}
 
   /// The name of this task.
   std::string name;
@@ -72,6 +74,9 @@ struct TaskOptions {
   /// value.  Can override existing environment variables and introduce new ones.
   /// Propagated to child actors and/or tasks.
   const std::unordered_map<std::string, std::string> override_environment_variables;
+  /// Breakpoint to drop into for the debugger after this task starts executing,
+  /// or "" if we do not want to drop into the debugger.
+  std::string debugger_breakpoint;
 };
 
 /// Options for actor creation tasks.

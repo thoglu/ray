@@ -419,11 +419,10 @@ class FunctionActorManager:
                     method_descriptor = PythonFunctionDescriptor(
                         module_name, actor_method_name, actor_class_name)
                 method_id = method_descriptor.function_id
-                executor = self._make_actor_method_executor(
-                    actor_method_name,
-                    actor_method,
-                    actor_imported=True,
-                )
+                if is_class_method(actor_method) or is_static_method(actor_class, actor_method_name):
+                    executor = lambda __ray_actor, *args, **kwargs: actor_method(*args, **kwargs)
+                else:
+                    executor = actor_method
                 self._function_execution_info[job_id][method_id] = (
                     FunctionExecutionInfo(
                         function=executor,
@@ -524,43 +523,3 @@ class FunctionActorManager:
         # different module, which is `default_worker.py`
         actor_class.__module__ = module_name
         return actor_class
-
-    def _make_actor_method_executor(self, method_name, method, actor_imported):
-        """Make an executor that wraps a user-defined actor method.
-
-        The wrapped method updates the worker's internal state and performs any
-        necessary checkpointing operations.
-
-        Args:
-            method_name (str): The name of the actor method.
-            method (instancemethod): The actor method to wrap. This should be a
-                method defined on the actor class and should therefore take an
-                instance of the actor as the first argument.
-            actor_imported (bool): Whether the actor has been imported.
-                Checkpointing operations will not be run if this is set to
-                False.
-
-        Returns:
-            A function that executes the given actor method on the worker's
-                stored instance of the actor. The function also updates the
-                worker's internal state to record the executed method.
-        """
-
-        def actor_method_executor(__ray_actor, *args, **kwargs):
-            # Execute the assigned method.
-            is_bound = (is_class_method(method)
-                        or is_static_method(type(__ray_actor), method_name))
-            if is_bound:
-                return method(*args, **kwargs)
-            else:
-                return method(__ray_actor, *args, **kwargs)
-
-        # Set method_name and method as attributes to the executor closure
-        # so we can make decision based on these attributes in task executor.
-        # Precisely, asyncio support requires to know whether:
-        # - the method is a ray internal method: starts with __ray
-        # - the method is a coroutine function: defined by async def
-        actor_method_executor.name = method_name
-        actor_method_executor.method = method
-
-        return actor_method_executor

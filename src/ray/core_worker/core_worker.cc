@@ -1293,8 +1293,7 @@ void CoreWorker::SubmitTask(const RayFunction &function,
                             const TaskOptions &task_options,
                             std::vector<ObjectID> *return_ids, int max_retries,
                             BundleID placement_options,
-                            bool placement_group_capture_child_tasks,
-                            const std::string &debugger_breakpoint) {
+                            bool placement_group_capture_child_tasks) {
   TaskSpecBuilder builder;
   const int next_task_index = worker_context_.GetNextTaskIndex();
   const auto task_id =
@@ -1320,7 +1319,7 @@ void CoreWorker::SubmitTask(const RayFunction &function,
                       rpc_address_, function, args, task_options.num_returns,
                       constrained_resources, required_resources, return_ids,
                       placement_options, placement_group_capture_child_tasks,
-                      debugger_breakpoint, override_environment_variables);
+                      task_options.debugger_breakpoint, override_environment_variables);
   TaskSpecification task_spec = builder.Build();
   if (options_.is_local_mode) {
     ExecuteTaskLocalMode(task_spec);
@@ -1506,7 +1505,7 @@ void CoreWorker::SubmitActorTask(const ActorID &actor_id, const RayFunction &fun
                       required_resources, return_ids,
                       std::make_pair(PlacementGroupID::Nil(), -1),
                       true, /* placement_group_capture_child_tasks */
-                      "",   /* debugger_breakpoint */
+                      task_options.debugger_breakpoint,
                       override_environment_variables);
   // NOTE: placement_group_capture_child_tasks and override_environment_variables will be
   // ignored in the actor because we should always follow the actor's option.
