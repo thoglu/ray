@@ -171,6 +171,7 @@ class TrialRunner:
         else:
             logger.debug("Starting a new experiment.")
 
+
         self._start_time = time.time()
         self._last_checkpoint_time = -float("inf")
         if checkpoint_period is None:
@@ -185,7 +186,7 @@ class TrialRunner:
                 TrialRunner.CKPT_FILE_TMPL.format(self._session_str))
 
         self._callbacks = CallbackList(callbacks or [])
-
+        print("END OF INIT TRIAL RUNNER ..")
     @property
     def resumed(self):
         return self._resumed
@@ -322,12 +323,15 @@ class TrialRunner:
             new_trial = Trial(trial_cp["trainable_name"])
             new_trial.__setstate__(trial_cp)
             trials += [new_trial]
+
+        print("resumed trials in list ", trials)
         for trial in sorted(
                 trials, key=lambda t: t.last_update_time, reverse=True):
             if run_errored_only and trial.status == Trial.ERROR:
                 new_trial = trial.reset()
                 self.add_trial(new_trial)
             else:
+                print("adding trial ", trial)
                 self.add_trial(trial)
 
     def is_finished(self):
@@ -336,6 +340,7 @@ class TrialRunner:
         return trials_done and self._search_alg.is_finished()
 
     def step(self):
+        print("... start of step ev loop .....")
         """Runs one step of the trial event loop.
 
         Callers should typically run this method repeatedly in a loop. They
@@ -349,9 +354,12 @@ class TrialRunner:
             self._callbacks.on_step_begin(
                 iteration=self._iteration, trials=self._trials)
         next_trial = self._get_next_trial()  # blocking
+        print("..... got next trial ..", next_trial)
+        print("RUNNIGN TRIALS", self.trial_executor.get_running_trials())
         if next_trial is not None:
             with warn_if_slow("start_trial"):
                 self.trial_executor.start_trial(next_trial)
+                print("yeah starting trial actually ")
                 self._callbacks.on_trial_start(
                     iteration=self._iteration,
                     trials=self._trials,
@@ -361,6 +369,7 @@ class TrialRunner:
         else:
             self.trial_executor.on_no_available_trials(self)
 
+        print("..... after starting trial")
         self._stop_experiment_if_needed()
 
         try:
@@ -446,11 +455,15 @@ class TrialRunner:
         # Only fetch a new trial if we have no pending trial
         if not any(trial.status == Trial.PENDING for trial in self._trials) \
                 or wait_for_trial:
+            print("updated trial queue")
             self._update_trial_queue(blocking=wait_for_trial)
         with warn_if_slow("choose_trial_to_run"):
             trial = self._scheduler_alg.choose_trial_to_run(self)
+            print("choose trial to run")
             if trial:
                 logger.debug("Running trial {}".format(trial))
+        #print("trial is restoring ..", trial.is_restoring)
+        print("returning trial ... ?!", trial)
         return trial
 
     def _process_events(self):
@@ -703,6 +716,7 @@ class TrialRunner:
         Args:
             trial (Trial): Trial being restored.
         """
+        print("processing to restore a trial .. ", trial)
         logger.debug("Trial %s: Processing trial restore.", trial)
         try:
             self.trial_executor.fetch_result(trial)

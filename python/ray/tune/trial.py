@@ -605,8 +605,10 @@ class Trial:
     def __setstate__(self, state):
         state["resources"] = json_to_resources(state["resources"])
 
+        ## reset "RUNNING" and "ERROR" status to pending when loading
         if state["status"] == Trial.RUNNING:
             state["status"] = Trial.PENDING
+        
         for key in self._nonjson_fields:
             state[key] = cloudpickle.loads(hex_to_binary(state[key]))
 

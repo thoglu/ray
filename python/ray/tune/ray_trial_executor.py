@@ -241,6 +241,7 @@ class RayTrialExecutor(TrialExecutor):
 
     def _train(self, trial):
         """Start one iteration of training and save remote id."""
+        print("trying to train ", trial)
         if self._find_item(self._paused, trial):
             raise TuneError(
                 "Should not call `train` on PAUSED trial {}. "
@@ -282,7 +283,12 @@ class RayTrialExecutor(TrialExecutor):
 
         See `RayTrialExecutor.restore` for possible errors raised.
         """
+        print("ray trial executer starting trial ...")
         prior_status = trial.status
+        print("prior status .. ", trial.status)
+        print("runner ", runner)
+
+        print("CHECKPOINT TO RESTORE FROM (STAET TRIAL):", checkpoint)
         if runner is None:
             # We reuse actors when there is previously instantiated state on
             # the actor. Function API calls are also supported when there is
@@ -291,18 +297,30 @@ class RayTrialExecutor(TrialExecutor):
             reuse_allowed = checkpoint is not None or trial.has_checkpoint() \
                             or issubclass(trial.get_trainable_cls(),
                                           FunctionRunner)
+
+            print("reuse allowed?", reuse_allowed)
             runner = self._setup_remote_runner(trial, reuse_allowed)
         trial.set_runner(runner)
         self.restore(trial, checkpoint)
+        print("after restore ...")
         self.set_status(trial, Trial.RUNNING)
 
         previous_run = self._find_item(self._paused, trial)
+
+        print("previous run .. ", previous_run)
+
+        print("TRAIN ", train)
+        print("trial is_restoring", trial.is_restoring)
         if prior_status == Trial.PAUSED and previous_run:
+            print("hm1")
             # If Trial was in flight when paused, self._paused stores result.
             self._paused.pop(previous_run[0])
             self._running[previous_run[0]] = trial
         elif train and not trial.is_restoring:
+            print("hm 2")
             self._train(trial)
+
+        print("end")
 
     def _stop_trial(self, trial, error=False, error_msg=None):
         """Stops this trial.
@@ -347,6 +365,8 @@ class RayTrialExecutor(TrialExecutor):
             train (bool): Whether or not to start training.
         """
         self._commit_resources(trial.resources)
+
+        print("parent start trial checkpoint ", checkpoint)
         try:
             self._start_trial(trial, checkpoint, train=train)
         except AbortTrialExecution:
@@ -715,6 +735,7 @@ class RayTrialExecutor(TrialExecutor):
             AbortTrialExecution: This error is raised if the trial is
                 ineligible for restoration, given the Tune input arguments.
         """
+        
         if checkpoint is None or checkpoint.value is None:
             checkpoint = trial.checkpoint
         if checkpoint.value is None:
@@ -723,6 +744,10 @@ class RayTrialExecutor(TrialExecutor):
             raise RuntimeError(
                 "Trial {}: Unable to restore - no runner found.".format(trial))
         value = checkpoint.value
+        print("trying to restore efrom checkpoint .. ", checkpoint)
+
+        print(checkpoint.value)
+
         if checkpoint.storage == Checkpoint.MEMORY:
             logger.debug("Trial %s: Attempting restore from object", trial)
             # Note that we don't store the remote since in-memory checkpoints
@@ -738,10 +763,13 @@ class RayTrialExecutor(TrialExecutor):
             elif trial.sync_on_checkpoint:
                 # This provides FT backwards compatibility in the
                 # case where a DurableTrainable is not provided.
+                print("restore from obj ...")
                 logger.debug("Trial %s: Reading checkpoint into memory", trial)
                 obj = TrainableUtil.checkpoint_to_object(value)
+               
                 with self._change_working_directory(trial):
                     remote = trial.runner.restore_from_object.remote(obj)
+                    print(remote)
             else:
                 raise AbortTrialExecution(
                     "Pass in `sync_on_checkpoint=True` for driver-based trial"
@@ -754,6 +782,7 @@ class RayTrialExecutor(TrialExecutor):
             else:
                 self._running[remote] = trial
                 trial.restoring_from = checkpoint
+                print("set restored values etc")
 
     def export_trial_if_needed(self, trial):
         """Exports model of this trial based on trial.export_formats.

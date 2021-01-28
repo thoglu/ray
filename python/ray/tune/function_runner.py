@@ -99,6 +99,7 @@ class FuncCheckpointUtil:
         assert os.path.exists(temporary_marker), (
             "Should not be calling this method on a permanent checkpoint.")
         os.remove(temporary_marker)
+        
         perm_checkpoint_dir = TrainableUtil.make_checkpoint_dir(
             logdir, index=step, override=True)
         shutil.rmtree(perm_checkpoint_dir)
@@ -187,8 +188,11 @@ class StatusReporter:
             sys.exit(0)
 
     def make_checkpoint_dir(self, step):
+        
+
         checkpoint_dir = TrainableUtil.make_checkpoint_dir(
-            self.logdir, index=step)
+            self.logdir, index="%.12d" % step)
+        
         logger.debug("Making checkpoint dir at %s", checkpoint_dir)
         return checkpoint_dir
 
